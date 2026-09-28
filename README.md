@@ -25,7 +25,7 @@ The management team of an online marketplace noticed that revenue growth was slo
 |---|---|
 | Orders | ~100k |
 | Unique customers | ~93k (`customer_unique_id`) |
-| Period | ISI_PERIODE_DATA_YANG_DIPAKAI |
+| Period | 2016-2018 |
 | Excluded | Orders with status `canceled` or `unavailable` |
 
 **Data model:** see the entity-relationship diagram in [`reports/erd.png`](reports/erd.png).
