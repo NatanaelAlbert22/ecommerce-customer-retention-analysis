@@ -121,4 +121,4 @@ The `.duckdb` database file is not committed; it is regenerated from the raw CSV
 
 ## Author
 
-**NATANAEL ALBERT** · [LinkedIn](ISI_LINK_LINKEDIN) · [GitHub](https://github.com/NatanaelAlbert22)
+**NATANAEL ALBERT** · [LinkedIn](https://www.linkedin.com/in/natanael-albert) · [GitHub](https://github.com/NatanaelAlbert22)
