@@ -1,7 +1,7 @@
 # E-commerce Customer Retention Analysis
 
 > Why is growth slowing down, and which customers are worth keeping?
-> An end-to-end SQL and BI analysis of ~100k Brazilian e-commerce orders: revenue trends, cohort retention, and RFM customer segmentation.
+> An end-to-end SQL and BI analysis of Brazilian e-commerce orders: revenue trends, cohort retention, and RFM customer segmentation.
 
 **[View the interactive dashboard on Tableau Public](https://public.tableau.com/app/profile/natanael.albert/viz/OlistBrazilianEcommerceDataAnalysis/Dashboard1?publish=yes)**
 
@@ -19,14 +19,13 @@ The management team of an online marketplace noticed that revenue growth was slo
 
 ## Dataset
 
-[Olist Brazilian E-Commerce Public Dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Kaggle): 9 relational tables covering orders, order items, customers, products, sellers, payments, reviews, and geolocation, from 2016 to 2018.
+[Olist Brazilian E-Commerce Public Dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Kaggle): 9 relational tables covering orders, order items, customers, products, sellers, payments, reviews, and geolocation.
 
 | Item | Detail |
 |---|---|
-| Orders | ~100k |
-| Unique customers | ~93k (`customer_unique_id`) |
-| Period | 2016-2018 |
-| Excluded | Orders with status `canceled` or `unavailable` |
+| Orders analyzed | 98,198 (status `canceled` and `unavailable` excluded) |
+| Unique customers | 94,983 (`customer_unique_id`) |
+| Period | September 2016 – August 2018 (September 2018 excluded, see Limitations) |
 
 **Data model:** see the entity-relationship diagram in [`reports/erd.png`](reports/erd.png).
 
@@ -46,33 +45,44 @@ The management team of an online marketplace noticed that revenue growth was slo
 - **Frequency** = number of distinct orders per customer.
 - **Monetary** = total revenue per customer.
 
-<!-- ## Key Findings
+## Key Findings
 
-> Ganti bagian ini dengan angka asli dari hasil query dan dashboard kamu. Contoh format ada di dalam kurung.
+**1. Revenue grew sharply through 2017, then plateaued in 2018 — it did not continue to grow, it stopped growing.**
 
-1. **Growth pattern:** ISI_TEMUAN_REVENUE (contoh: "Revenue grew steadily until [month/year], then flattened. The slowdown came from fewer new customers rather than lower order value.")
-2. **Retention is very low:** ISI_TEMUAN_RETENSI (contoh: "Only X% of customers purchased again in the month after their first order, and retention stayed under Y% in later months.")
-3. **Segments:** ISI_TEMUAN_RFM (contoh: "X% of customers fall into Lost, while only Y% are Champions. The At Risk segment holds Z% of total revenue.")
+Monthly revenue climbed from R$51k (October 2016) to a peak of R$1.17M in November 2017 (likely a Black Friday effect, with order volume jumping to 7,421 orders that month alone). From January to August 2018, revenue oscillated in a narrow band between roughly R$0.98M and R$1.16M with no clear upward trend — month-over-month growth alternated between small positive and negative swings (+17.7%, -0.9%, -10.9%, +1.9%, -4.1%). This is the slowdown the business team suspected: **growth did not reverse, it flattened.**
+
+**2. Repeat purchases are extremely rare — this is the core retention problem.**
+
+Across nearly every cohort, retention in the month immediately after first purchase sits **under 1%** (examples observed: 0.52% for the July 2017 cohort, 0.34% for the October 2016 cohort, 0.02% for the August 2018 cohort). The large majority of customers in this dataset buy exactly once and never return. This is a structural characteristic of the business, not a data error — see heatmap below.
 
 ![Cohort retention heatmap](reports/cohort_heatmap.png)
 
+**3. RFM segmentation, with an important caveat about the Frequency score.**
+
+| Segment | Customers | % of total |
+|---|---|---|
+| Loyal Customer | 35,366 | 37.2% |
+| Regular | 19,248 | 20.3% |
+| At Risk | 14,093 | 14.8% |
+| Lost | 10,087 | 10.6% |
+| New Customer | 8,659 | 9.1% |
+| Champion | 7,530 | 7.9% |
+
+At first glance, 37% "Loyal Customer" looks inconsistent with finding #2 (almost nobody repeat-purchases). This is explained in Limitations below — it is a real issue found during this analysis, not a hypothetical one.
+
 ## Business Recommendations
 
-> Sesuaikan dengan temuan aslimu. Kerangka di bawah bisa dipakai.
-
-1. **Prioritize first-to-second purchase conversion.** Because most customers never return, small improvements here (post-purchase email, second-order voucher) likely have the biggest impact.
-2. **Target the At Risk segment first.** They have purchase history and value but have gone quiet, so win-back campaigns are cheaper than acquiring new customers.
-3. **Do not spend retention budget on Lost customers.** Reactivation cost is likely higher than the expected return.
-4. **Track cohort retention monthly** as a standing KPI instead of relying on total revenue alone. -->
+1. **Treat "second purchase" as the primary KPI, not overall retention curves.** Since the drop-off from 1st to 2nd purchase is this severe, a post-purchase incentive (discount on next order, reminder email at day 7–14) targeting first-time buyers has the largest realistic upside.
+2. **Re-evaluate the RFM segments before using them for campaign targeting.** The Frequency score needs to be rebuilt with a rule-based approach (see Limitations) before "Loyal Customer" and "Champion" lists are trusted for marketing spend.
+3. **Treat the 2018 plateau as the baseline to beat, not a one-off dip.** Since it held for 8 consecutive months, this looks structural (market saturation or competition) rather than seasonal noise, and likely needs a growth lever beyond organic repeat purchases, such as new-customer acquisition or expansion into new product categories.
+4. **Do not over-invest in reactivating the Lost segment** until the Frequency scoring is fixed and this segment can be verified as genuinely low-value rather than an artifact of the scoring method.
 
 ## Limitations
 
-Being explicit about these makes the findings more trustworthy:
-
-- **Low repeat-purchase rate is a property of the data.** Most Olist customers bought only once, so frequency is heavily concentrated at 1. Segments based on frequency should be read with care.
-- **Tied frequency values and `NTILE`:** `NTILE(5)` splits ties across buckets arbitrarily, so the F score is a weak signal for customers who all have the same frequency. A rule-based F score (for example 1, 2, 3+ orders) would be more robust.
-- **Later cohorts are incomplete.** Recent cohorts have had less time to return, so their retention appears lower than it will eventually be.
-- **Historical, observational data.** The analysis describes what happened; it does not prove which actions would cause customers to return.
+- **RFM Frequency score is distorted by tied values.** Because the large majority of customers have `frequency = 1`, `NTILE(5)` — which splits by rank rather than value — spreads these one-time buyers across multiple buckets (1 through roughly 3–4) instead of grouping them all at the bottom. This likely explains why 37% of customers were classified as "Loyal Customer": a chunk of one-time buyers received a misleadingly high F score purely from how ties were broken, not from actual repeat behavior. **Fix for a future iteration:** replace `NTILE` on frequency with a rule-based score, e.g. `CASE WHEN frequency = 1 THEN 1 WHEN frequency = 2 THEN 3 ELSE 5 END AS f_score`.
+- **September 2018 was excluded from the revenue trend** because the dataset only contains a single incomplete order for that month (R$166.46) — this is a data cutoff artifact, not a real one-month revenue collapse, and including it would badly distort any month-over-month comparison.
+- **Low repeat-purchase rate is a property of the data**, not a modeling choice — most Olist customers bought only once in the dataset's timeframe.
+- **Historical, observational data.** The analysis describes what happened; it does not prove which specific actions would cause customers to return.
 
 ## Repository Structure
 
@@ -121,4 +131,4 @@ The `.duckdb` database file is not committed; it is regenerated from the raw CSV
 
 ## Author
 
-**NATANAEL ALBERT** · [LinkedIn](https://www.linkedin.com/in/natanael-albert) · [GitHub](https://github.com/NatanaelAlbert22)
+**ISI_NAMA_KAMU** · [LinkedIn](https://www.linkedin.com/in/natanael-albert/) · [GitHub](https://github.com/NatanaelAlbert22)
